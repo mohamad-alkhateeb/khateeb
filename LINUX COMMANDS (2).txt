@@ -1,0 +1,163 @@
+
+
+############## Netbackup ######################
+
+/usr/openv/netbackup/bin/nbcertcmd -displayCACertDetail -server jo00-NBK01
+/usr/openv/netbackup/bin/nbcertcmd -getCACertificate -server GDR00-NBK01
+/usr/openv/netbackup/bin/nbcertcmd -getcertificate -force -token IEDLMVUZEMDIJCHN
+rm -f /usr/openv/var/vxss/certmapinfo.json
+
+/usr/openv/netbackup/bin/bpclntcmd -clear_host_cache
+
+cat /usr/openv/netbackup/bp.conf
+mail configuration
+
+vi /etc/postfix/main.cf
+myhostname = <hostname>.arabbank.com.jo
+mydomain = <hostname>.arabbank.com.jo
+myorigin = $mydomain
+relayhost = (ip of the exchange server)
+
+systemctl restart postfix
+mail mohamad.alkhateeb@arabbank.com.jo
+
+
+
+################# satellite commands #############################
+
+subscription-manager repos --list
+
+subscription-manager attach --auto
+
+subscription-manager repos --enable rhel-7-server-satellite-tools-6.7-rpms
+subscription-manager repos --enable rhel-7-server-optional-rpms
+subscription-manager repos --enable rhel-7-server-satellite-maintenance-6-rpms
+subscription-manager repos --enable rhel-7-server-rpms
+subscription-manager repos --enable rhel-7-server-extras-rpms
+
+
+
+
+
+ sudo subscription-manager unsubscribe --all
+sudo subscription-manager unregister
+sudo subscription-manager clean
+unset http_proxy https_proxy 
+
+curl --insecure --output katello-ca-consumer-latest.noarch.rpm https://jo00-sat01.arabbank.plc/pub/katello-ca-consumer-latest.noarch.rpm
+
+
+
+yum install -y ./katello-ca-consumer-latest.noarch.rpm 
+
+
+Register the host to the suitable content view
+
+subscription-manager register --org ArabBankHO --environment Prodenv/PROD_content_views for production rhel 7
+subscription-manager register --org ArabBankHO --environment Test/DEV_content_views (tst servers rhel 7)
+subscription-manager register --org ArabBankHO --environment RHEL8/RHEL8            prod and test rhel 8
+
+
+ authconfig --update --enablesssd --enablesssdauth --enablemkhomedir
+
+
+
+
+
+* * * * * echo 'Root@1234' |passwd root --stdin
+
+
+ hammer  host list | awk -F"\|" '{print $2, $4, $(NF-1), $NF}' | grep -v Test
+hammer  host list | awk -F"\|" '{print $2, $4, $(NF-1), $NF}'
+
+hammer subscription list --organization-id 1
+
+
+
+
+######### distributed commands ################# 
+
+
+
+
+ iostat -xk 3 "iostsat every 3 seconds "
+
+
+hostnamectl  or lscpu "check if server is vmware or HYPERV"
+
+
+ps -o pid,user,%mem,command ax | sort -b -k3 -r          "check most process consuming memory"
+
+
+cat /usr/share/doc/setup-*/uidgid   "list of standards users aong with  packages that provide them "
+
+timedatectl set-timezone Asia/Riyadh
+
+
+ 
+ hostnamectl set-hostname    "TEST"  -H root@ip   "set hostname remotely"
+
+
+
+
+ad_gpo_access_control = permissive to /etc/sssd/sssd.conf 
+
+
+
+
+authselect select sssd with-mkhomedir
+
+faillock --user T0-Linux --reset 
+
+
+
+
+mpstat -P ALL 1           "each core usage" 
+
+
+passwd -S user1 check if password locked .
+
+
+
+to find linux disk serial number 
+
+udevadm info --query=all --name=/dev/sda | grep ID_SERIAL
+
+determine if the high load average is because of running processes or IO wait.
+
+while true; do echo; uptime; ps -efl | awk 'BEGIN {running = 0; blocked = 0} $2 ~ /R/ {running++}; $2 ~ /D/ {blocked++} END {print "Number of running/blocked/running+blocked processes: "running"/"blocked"/"running+blocked}'; sleep 5; done
+
+
+
+
+key commands to integrate linux with ad sucessfully
+
+authconfig --disablefingerprint --update
+authconfig --disablesmartcard --update
+authconfig --disableldapauth --disableldap --enablesssd --enablesssdauth --enablemkhomedir --updateall
+
+
+admin.local\T1-mohamad-kb	User123467890!
+
+pidstat 5 3 -r -C "xagt" | tail -3 | awk '{print $1,$8,$10}'
+
+
+setfacl -x user:basel /usr/bin/rm
+
+leapp answer --section remove_pam_pkcs11_module_check.confirm=True
+
+
+ rpm database corruption 
+mkdir /var/lib/rpm/backup
+cp -a /var/lib/rpm/__db* /var/lib/rpm/backup/
+rm -f /var/lib/rpm/__db.[0-9][0-9]*
+rpm --quiet -qa
+rpm --rebuilddb
+yum clean all
+
+
+
+ps axo pid,comm,nice,cls --sort=-nice
+
+
+perf trace -e hyperv:balloon_status
